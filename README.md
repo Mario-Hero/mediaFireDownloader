@@ -36,7 +36,7 @@ When downloading, type quit or q then press enter to stop downloading. The progr
 
 ## 其他 Others
 
-支持http://adf.ly 和 http://ouo.io开头且后面包含完整下载地址的链接，比如：
+支持http://adf.ly 和 http://ouo.io 开头且后面包含完整下载地址的链接，比如：
 
 http://ouo.io/st/xR4hnRab/?s=https%3A%2F%2Fwww.mediafire.com%2Ffile%2Fajfymwsr4b5z3nx%2FPure_Media_Vol.080.rar%2Ffile
 
