@@ -30,8 +30,7 @@ except ImportError:
 
 # you can change it >>>>>
 
-#DOWNLOAD_PATH = os.getcwd()  # 文件下载位置 the download path
-DOWNLOAD_PATH = 'E:\\VirtualBox\\写真待分类\\'  # 文件下载位置 the download path
+DOWNLOAD_PATH = os.getcwd()  # 文件下载位置 the download path
 
 # <<<<< you can change it
 
@@ -39,7 +38,7 @@ DOWNLOAD_PATH = 'E:\\VirtualBox\\写真待分类\\'  # 文件下载位置 the do
 HEADER = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36"}
 DOWNLOAD_AS_GROUP = True
-TARGET_PATH = 'E:\\VirtualBox\\VirtualBox\\写真\\果儿\\'
+TARGET_PATH = ''
 READ_TARGET_PATH = False #这里是我自己设计的部分，在爬下载链接时顺便把标题给爬了下来，用来判断硬盘里是否已经下载过该文件，读者不用管
 
 
