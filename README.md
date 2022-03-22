@@ -10,7 +10,7 @@ This is a Python script for downloading files from MediaFire.
 
 Generally, we can download files from MediaFire with the browser, but we can't download too many files at the same time, so we can only download them slowly and manually. Therefore, I designed a Python script, which can download automatically without manual operation.
 
-At present, download two files as group at the same time, and each group is suspended for 2 minutes to avoid the server making the download speed to zero.. In this way, the download speed can be maintained above 1MB / s.
+At present, download two files as group at the same time, and each group is suspended for 2 minutes to avoid the server making the download speed to zero. In this way, the download speed can be maintained above 1MB / s.
 
 ## 依赖 Dependency
 
