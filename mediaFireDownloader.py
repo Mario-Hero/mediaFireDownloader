@@ -10,12 +10,8 @@ import time
 import requests
 import threading
 from urllib.parse import unquote
+import datetime
 
-try:
-    import wget
-except ImportError:
-    os.system('pip install wget')
-    import wget
 try:
     from bs4 import BeautifulSoup
 except ImportError:
@@ -45,14 +41,16 @@ READ_TARGET_PATH = False #这里是我自己设计的部分，在爬下载链接
 class mediaFireDownloader:
     def __init__(self, downloadPath):
         self.GAP_TIME = 120
+        self.restartTime = 0
+        self.downloadDelta = 0
+        self.totalDownloadSize = 0
+        self.tempDownloadSize = 0
         self.urlList = []
         self.nowDownload = []
         self.nowDownloadName = []
         self.downloadPath = downloadPath
         self.targetPath = TARGET_PATH
         self.MAX_THREAD = 2
-        self.currentList = []
-        self.totalList = []
         self.waitMode = False
         self.speedDelta = 0
         self.speed = 0
@@ -83,6 +81,8 @@ class mediaFireDownloader:
 
     def writeQueue(self):
         with open(os.path.join(os.getcwd(), self.queueFileName), 'w', encoding='utf-8') as queueFile:
+            for url in self.nowDownload:
+                queueFile.write(url + '\n')
             for url in self.urlList:
                 if url:
                     if not (url in self.nowDownload):
@@ -125,6 +125,40 @@ class mediaFireDownloader:
                     self.urlList.append(url)
                     self.writeQueue()
 
+    def requestsDownload(self, url, filePath, fileName):
+        count = 0
+        r1 = requests.get(url, stream=True, verify=False)
+        totalSize = int(r1.headers['Content-Length'])
+        if os.path.exists(filePath):
+            tempSize = os.path.getsize(filePath)  # 本地已经下载的文件大小
+        else:
+            tempSize = 0
+        tempSizeMB = int(tempSize / (1024*1024))
+        totalSizeMB = int(totalSize / (1024*1024))
+        self.printLine('Downloading: ' + fileName + ' ' + str(tempSizeMB) + '/' + str(totalSizeMB) + ' MB')
+        self.tempDownloadSize += tempSize
+        self.totalDownloadSize += totalSize
+        while count < 5:
+            if count != 0:
+                tempSize = os.path.getsize(filePath)
+            if tempSize >= totalSize:
+                break
+            count += 1
+            # print("第[{}]次下载文件,已经下载数据大小:[{}],应下载数据大小:[{}]".format(count, tempSize, totalSize))
+            headers = {"Range": f"bytes={tempSize}-{totalSize}"}
+            # r = requests.get(url, stream=True, verify=False)
+            r = requests.get(url, stream=True, verify=False, headers=headers)
+            with open(filePath, "ab") as f:
+                if count != 1:
+                    f.seek(tempSize)
+                for chunk in r.iter_content(chunk_size=1024 * 64):
+                    if chunk:
+                        tempSize += len(chunk)
+                        self.downloadDelta += int(len(chunk)/1024)
+                        self.tempDownloadSize += int(len(chunk))
+                        f.write(chunk)
+                        f.flush()
+
     def printLine(self, printMessage, forever=True):
         if forever:
             sys.stdout.write('\r' + printMessage + '\n')
@@ -146,7 +180,7 @@ class mediaFireDownloader:
         elif 'zippyshare.' in url:
             print('Wrong url: ' + url)
             return
-            downloadButton = soup.find('a', {'id': 'dlbutton'})
+            #downloadButton = soup.find('a', {'id': 'dlbutton'})
         else:
             print('Wrong url: ' + url)
             return
@@ -166,14 +200,17 @@ class mediaFireDownloader:
             if not os.path.exists(path):
                 if not (fileName in self.nowDownloadName):
                     self.nowDownloadName.append(fileName)
-                self.printLine('Downloading: ' + fileName)
+                #self.printLine('Downloading: ' + fileName)
+                path += '.tmp'
                 try:
-                    wget.download(fileUrl, path, bar=self.bar_progress)
+                    self.requestsDownload(fileUrl, path, fileName)
+                    #wget.download(fileUrl, path, bar=self.bar_progress)
                 except:
                     #self.nowDownloadName.remove(fileName)
                     #self.nowDownload.remove(url)
                     return
                 # wget.download(fileUrl, path)
+                os.rename(path, path[:-4])
                 self.printLine('Finish: ' + fileName)
                 self.nowDownloadName.remove(fileName)
             else:
@@ -188,21 +225,22 @@ class mediaFireDownloader:
             self.nowDownload.remove(url)
         self.writeQueue()
 
-    def bar_progress(self, current, total, width=80):
-        for i in range(len(self.totalList)):
-            if total == self.totalList[i]:
-                self.speedDelta += int((current - self.currentList[i]) / 1024)
-                self.currentList[i] = current
-                return
-        if len(self.totalList) >= self.MAX_THREAD:
-            self.totalList.pop(0)
-            self.currentList.pop(0)
-        self.totalList.append(total)
-        self.currentList.append(current)
+    def restartClear(self):
+        self.downloadDelta = 0
+        self.tempDownloadSize = 0
+        self.totalDownloadSize = 0
 
     def reportProgress(self):
         if self.nowDownload:
-            self.printLine("Speed: " + str(self.speed) + ' KB/s                    ', False)
+            self.speed = int(self.downloadDelta / self.sleepTime)
+            self.downloadDelta = 0
+            if self.totalDownloadSize != 0 and self.speed != 0:
+                percentSize = int(self.tempDownloadSize/self.totalDownloadSize * 100)
+                remainingSeconds = int((self.totalDownloadSize - self.tempDownloadSize)/1024/self.speed)
+                #m, s = divmod(remainingSeconds, 60)
+                #h, m = divmod(m, 60)
+                #print("%d:%02d:%02d" % (h, m, s))
+                self.printLine("Speed: " + str(self.speed) + ' KB/s  ' + str(percentSize) + '%  remaining: ' + str(datetime.timedelta(seconds=remainingSeconds)), False)
 
     def cycleChild(self):
         try:
@@ -220,8 +258,7 @@ class mediaFireDownloader:
                             if self.firstRun:
                                 self.firstRun = False
                             else:
-                                self.totalList = []
-                                self.currentList = []
+                                self.restartTime = 0
                                 time.sleep(self.GAP_TIME)
                             for url in self.urlList:
                                 if len(self.nowDownload) < self.MAX_THREAD:
@@ -242,6 +279,7 @@ class mediaFireDownloader:
                             if self.firstRun:
                                 self.firstRun = False
                             else:
+                                self.restartTime = 0
                                 time.sleep(5)
                             for url in self.urlList:
                                 if len(self.nowDownload) < self.MAX_THREAD:
@@ -276,24 +314,15 @@ class mediaFireDownloader:
 
     def cycle(self):
         self.speedZeroWait = True
-        restartTime = 0
         try:
             while self.speedZeroWait:
                 if not self.firstRun:
-                    self.totalList = []
-                    self.currentList = []
-                    #print(self.nowDownload)
-                    downloadPathFileList = os.listdir(self.downloadPath)
-                    for nowDownloadFile in self.nowDownloadName:
-                        for downFile in downloadPathFileList:
-                            if downFile.startswith(nowDownloadFile) and downFile.endswith('.tmp'):
-                                os.remove(os.path.join(self.downloadPath, downFile))
-                                break
-                    restartTime += 1
-                    if restartTime >= 5:
+                    self.restartClear()
+                    self.restartTime += 1
+                    if self.restartTime >= 5:
                         self.printLine('Restart too much time.')
                         break
-                    time.sleep(int(self.GAP_TIME * 2))
+                    time.sleep(int(self.GAP_TIME * 2 * self.restartTime))
                 self.speedZeroWait = False
                 t = threading.Thread(target=self.cycleChild)
                 t.setDaemon(True)
@@ -330,16 +359,6 @@ class mediaFireDownloader:
                 self.addUrl(newUrl)
             self.printLine('Waiting download to finish...')
         except KeyboardInterrupt:
-            time.sleep(1)
-            downloadPathFileList = os.listdir(self.downloadPath)
-            for nowDownloadFile in self.nowDownloadName:
-                print(nowDownloadFile)
-                for downFile in downloadPathFileList:
-                    if downFile.startswith(nowDownloadFile) and downFile.endswith('.tmp'):
-                        os.remove(os.path.join(self.downloadPath, downFile))
-                        print(downFile)
-                        break
-            os.system('pause')
             sys.exit(0)
         t.join()
 
@@ -353,9 +372,14 @@ class mediaFireDownloader:
         except KeyboardInterrupt:
             sys.exit(0)
 
-    def readTargetPath(self):
+    def readTargetPath(self, file):
         if self.targetPath:
             if os.path.exists(self.targetPath):
+                fileName = file.split(' ')[-1].split('.')[0].lower()
+                for targetFolder in os.listdir(self.targetPath):
+                    if fileName in targetFolder.lower() or targetFolder.lower() in fileName:
+                        self.targetPath = os.path.join(self.targetPath, targetFolder)
+                        break
                 for root, dirs, files in os.walk(self.targetPath):
                     for name in dirs:
                         name = name.lower()
@@ -389,28 +413,41 @@ if __name__ == '__main__':
         #downloader.waitOnly()
         downloader.startAndWaitForInput()
     else:
-        if READ_TARGET_PATH:
-            downloader.readTargetPath()
-            #print(downloader.downloadFolders)
         for file in sys.argv[1:]:
             if os.path.exists(file):
                 fff = open(file, 'rb')
                 data = fff.read()
+                fileName = os.path.split(file)[1]
                 fileEncoding = chardet.detect(data).get('encoding')
+                if READ_TARGET_PATH:
+                    downloader.readTargetPath(fileName)
+                    # print(downloader.downloadFolders)
                 with open(file, 'r', encoding=fileEncoding) as f:
                     shouldDownload = True
                     for line in f.readlines():
                         if line.startswith('#') and READ_TARGET_PATH:
                             shouldDownload = True
-                            title = line[findFourthSuper(line)+1:].strip()  #这里是我自己设计的部分，在爬下载链接时顺便把标题给爬了下来，用来判断硬盘里是否已经下载过该文件，读者不用管
+                            title = line[findFourthSuper(line)+1:].strip().lower()  #这里是我自己设计的部分，在爬下载链接时顺便把标题给爬了下来，用来判断硬盘里是否已经下载过该文件，读者不用管
                             for folder in downloader.downloadFolders:
-                                if title in folder or folder in title:
+                                if title in folder.lower() or folder.lower() in title:
                                     shouldDownload = False
                                     try:
                                         print('Not add: ' + title)
                                     except:
                                         pass
                                     break
+                                else:
+                                    appearTime = 0
+                                    for splitTitle in title.split(' '):
+                                        if splitTitle in folder and (not (splitTitle in fileName)) and (not (fileName in splitTitle)):
+                                            appearTime += 1
+                                        if appearTime >= 1:
+                                            shouldDownload = False
+                                            try:
+                                                print('Not add: ' + title)
+                                            except:
+                                                pass
+                                            break
                             if shouldDownload:
                                 try:
                                     print('Add:     ' + title)
@@ -418,6 +455,5 @@ if __name__ == '__main__':
                                     pass
                         elif shouldDownload:
                             downloader.addUrl(line)
-        time.sleep(1)
-        #downloader.waitOnly()
+        downloader.waitOnly()
         #downloader.start()
