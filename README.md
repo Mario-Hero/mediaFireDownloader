@@ -2,21 +2,24 @@
 
 这是一个MediaFire文件队列下载的Python脚本。
 
-This is a Python script for downloading files from MediaFire.
-
 通常情况下，我们可以用浏览器下载MediaFire的文件，但是不能同时下载过多文件，所以只能几个几个地慢慢手动下载，比较费时间，所以我设计了这样一个Python脚本，可以自动下载，省去了手动操作。
 
-目前采用两个为一组的下载方式，每组之间暂停2分钟，来避免服务器将下载速度归零。这样的下载速度可以保持在1MB/s以上。
+目前采用两个为一组的下载方式，每组之间暂停2分钟，来避免服务器将下载速度归零。这样的下载速度可以保持在1MB/s以上。速度归零后过段时间会重启下载。
+
+支持断点续传。可以随时关闭。
+
+This is a Python script for downloading files from MediaFire.
 
 Generally, we can download files from MediaFire with the browser, but we can't download too many files at the same time, so we can only download them slowly and manually. Therefore, I designed a Python script, which can download automatically without manual operation.
 
-At present, download two files as group at the same time, and each group is suspended for 2 minutes to avoid the server making the download speed to zero. In this way, the download speed can be maintained above 1MB / s.
+At present, the script download two files as group at the same time, and each group is suspended for 2 minutes to avoid the server making the download speed to zero. In this way, the download speed can be maintained above 1MB / s. After the speed returns to zero, the download will be restarted later.
+Support breakpoint resume download. The script can be closed at any time.
 
 ## 依赖 Dependency
 
 Python 3
 
-wget, bs4, chardet (如果没有安装，该脚本会自动安装。If the packages are not installed, the script will automatically install them)
+bs4, chardet (如果没有安装，该脚本会自动安装。If the packages are not installed, the script will automatically install them)
 
 ## 用法 Usage
 
@@ -56,6 +59,3 @@ More network disks may be supported in the future, but selenium should be used.
 ## License
 
 The project is released under MIT License.
-
-
-
