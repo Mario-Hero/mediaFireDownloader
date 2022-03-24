@@ -13,6 +13,7 @@ This is a Python script for downloading files from MediaFire.
 Generally, we can download files from MediaFire with the browser, but we can't download too many files at the same time, so we can only download them slowly and manually. Therefore, I designed a Python script, which can download automatically without manual operation.
 
 At present, the script download two files as group at the same time, and each group is suspended for 2 minutes to avoid the server making the download speed to zero. In this way, the download speed can be maintained above 1MB / s. After the speed returns to zero, the download will be restarted later.
+
 Support breakpoint resume download. The script can be closed at any time.
 
 ## 依赖 Dependency
