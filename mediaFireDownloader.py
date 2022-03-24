@@ -127,7 +127,7 @@ class mediaFireDownloader:
 
     def requestsDownload(self, url, filePath, fileName):
         count = 0
-        r1 = requests.get(url, stream=True, verify=False)
+        r1 = requests.get(url, stream=True)
         totalSize = int(r1.headers['Content-Length'])
         if os.path.exists(filePath):
             tempSize = os.path.getsize(filePath)  # 本地已经下载的文件大小
@@ -147,7 +147,7 @@ class mediaFireDownloader:
             # print("第[{}]次下载文件,已经下载数据大小:[{}],应下载数据大小:[{}]".format(count, tempSize, totalSize))
             headers = {"Range": f"bytes={tempSize}-{totalSize}"}
             # r = requests.get(url, stream=True, verify=False)
-            r = requests.get(url, stream=True, verify=False, headers=headers)
+            r = requests.get(url, stream=True, headers=headers)
             with open(filePath, "ab") as f:
                 if count != 1:
                     f.seek(tempSize)
@@ -160,9 +160,9 @@ class mediaFireDownloader:
                         f.flush()
 
     def printLine(self, printMessage, forever=True):
+        sys.stdout.write('\r                                                    ')
+        sys.stdout.flush()
         if forever:
-            sys.stdout.write('\r                                                     ')
-            sys.stdout.flush()
             sys.stdout.write('\r' + printMessage + '\n')
             sys.stdout.flush()
         else:
