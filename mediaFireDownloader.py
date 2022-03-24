@@ -161,6 +161,8 @@ class mediaFireDownloader:
 
     def printLine(self, printMessage, forever=True):
         if forever:
+            sys.stdout.write('\r                                                     ')
+            sys.stdout.flush()
             sys.stdout.write('\r' + printMessage + '\n')
             sys.stdout.flush()
         else:
