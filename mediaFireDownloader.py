@@ -7,11 +7,16 @@
 import os
 import sys
 import time
-import requests
 import threading
 from urllib.parse import unquote
 import datetime
 
+try:
+    import requests
+except ImportError:
+    os.system('pip install requests')
+    import requests
+    
 try:
     from bs4 import BeautifulSoup
 except ImportError:
