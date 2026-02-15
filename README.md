@@ -1,3 +1,11 @@
+----
+
+**别用这个脚本了，IDM下载快多了。**
+
+**Don't use this script anymore, IDM downloads much faster.**
+
+----
+
 # mediaFireDownloader 
 
 这是一个MediaFire文件队列下载的Python脚本。
@@ -60,3 +68,4 @@ More network disks may be supported in the future, but selenium should be used.
 ## License
 
 The project is released under MIT License.
+
